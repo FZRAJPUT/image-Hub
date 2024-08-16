@@ -124,7 +124,7 @@ const Main = () => {
 
             {loading && <p className="mt-4">Loading...</p>}
 
-            {noMoreImages && !loading && <p className="mt-4 text-gray-500">No more images available.</p>}
+            {noMoreImages && !loading && <p className="mt-4 text-gray-500">No {input} images available.</p>}
 
             {images.length > 0 && !loading && !noMoreImages && (
                 <button onClick={handleSeeMore} className='mt-6 mb-2 bg-sky-500 hover:bg-sky-600 py-2 px-4 rounded text-white shadow-md'>
