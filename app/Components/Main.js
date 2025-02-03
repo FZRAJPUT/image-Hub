@@ -145,13 +145,13 @@ const Main = () => {
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative mb-4 break-inside-avoid rounded overflow-hidden group"
+            className="relative mb-4 break-inside-avoid rounded overflow-hidden group rounded-[6px]"
           >
             {/* Image */}
             <img
               src={image.urls.small}
               alt="random"
-              className="w-full h-auto object-cover"
+              className="w-full h-auto object-cover rounded-[6px]"
             />
             {/* Download Button */}
             <button
