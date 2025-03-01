@@ -36,9 +36,6 @@ const Navbar = ({ onSearch, searchValue, setSearchValue }) => {
             <a href="#" className="text-gray-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">
               Collections
             </a>
-            <a href="#" className="text-gray-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">
-              Upload
-            </a>
             <button className="p-2 rounded-full hover:bg-gray-100">
               <Heart className="h-5 w-5 text-gray-600" />
             </button>

@@ -1,10 +1,9 @@
 "use client";
-import { Download, Search } from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
+import { Download, Search, Heart } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Loader from "./Loader";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { motion } from "framer-motion";
 
 const Main = () => {
   const [input, setInput] = useState("");
@@ -12,9 +11,10 @@ const Main = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [download, setDownload] = useState(false);
+  const [favorites, setFavorites] = useState([]);
   const observer = useRef(null);
 
-  const API_KEY = "BxzsLkkcx-jlK6zfPM_mA2baONy2k1NY9rTdvhkFghs";
+  const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
   const fetchImages = async (newPage = 1, searchTerm = input) => {
     setLoading(true);
@@ -29,7 +29,7 @@ const Main = () => {
       const data = await response.json();
       const result = searchTerm ? data.results : data;
 
-      setImages(newPage > 1 ? (prev) => [...prev, ...result] : result);
+      setImages((prev) => (newPage === 1 ? result : [...prev, ...result]));
       setPage(newPage);
     } catch (err) {
       toast.error("Failed to fetch images. Please try again.");
@@ -43,6 +43,7 @@ const Main = () => {
       toast.warning("Please enter an image name to search");
       return;
     }
+    setImages([]);
     fetchImages(1, input);
   };
 
@@ -73,58 +74,86 @@ const Main = () => {
     }
   };
 
+  const toggleFavorite = (image) => {
+    setFavorites((prev) => {
+      if (prev.some((fav) => fav.id === image.id)) {
+        return prev.filter((fav) => fav.id !== image.id);
+      } else {
+        return [...prev, image];
+      }
+    });
+  };
+
   useEffect(() => {
     fetchImages();
   }, []);
 
+  const lastImageRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && !loading) {
+            fetchImages(page + 1);
+          }
+        },
+        { threshold: 1.0 }
+      );
+      if (node) observer.current.observe(node);
+    },
+    [loading, page]
+  );
+
   return (
-    <div className="min-w-[90%] min-h-screen flex px-10 flex-col items-center py-16 bg-gradient-to-r from-gray-100 to-gray-200">
-      <p className="text-gray-700 text-xl font-semibold my-6 text-center">
+    <div className="min-w-full min-h-screen flex px-4 md:px-10 flex-col items-center bg-gradient-to-r from-gray-100 to-gray-200">
+      <p className="text-gray-700 text-[15px] md:text-2xl font-semibold my-6 text-center px-4">
         Discover and download high-quality images effortlessly!
       </p>
 
-        <div className="w-full max-w-lg">
-          <div className="relative">
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              placeholder="Search images"
-              value={input}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <div className="absolute left-3 top-2.5">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <button
-              onClick={handleSearch}
-              className="absolute right-2 top-1.5 bg-sky-500 text-white px-3 py-1 rounded-md hover:bg-sky-600 transition-colors"
-            >
-              Search
-            </button>
-            <div></div>
+      <div className="w-full max-w-2xl px-4 mb-10">
+        <div className="relative">
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            placeholder="Search images"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <div className="absolute left-3 top-2.5">
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
+          <button
+            onClick={handleSearch}
+            className="absolute right-2 top-1.5 bg-sky-500 text-white px-3 py-1 rounded-md hover:bg-sky-600 transition-colors"
+          >
+            Search
+          </button>
         </div>
+      </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-8">
-        {images.map((image) => (
-          <motion.div
+      <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 p-4 w-full max-w-7xl">
+        {images.map((image, index) => (
+          <div
             key={image.id}
-            className="relative overflow-hidden group rounded-lg shadow-lg"
-            whileHover={{ scale: 1.05 }}
+            ref={index === images.length - 1 ? lastImageRef : null}
+            className="relative mb-4 overflow-hidden group rounded-lg shadow-lg hover:shadow-xl transition-shadow"
           >
             <img
               src={image.urls.small}
-              alt="random"
-              className="w-full h-auto object-cover rounded-lg"
+              alt={image.alt_description || "Image"}
+              className="w-full h-auto object-cover rounded-lg transition-transform duration-300 ease-in-out transform group-hover:scale-105"
             />
-            <button
-              onClick={() => handleDownload(image.urls.full)}
-              className="absolute bottom-2 right-2 flex items-center justify-center px-3 py-2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded transition-opacity opacity-0 group-hover:opacity-100"
-            >
-              {!download ? <Download size={20} /> : <Loader />}
-            </button>
-          </motion.div>
+            <div className="absolute bottom-2 right-2 flex space-x-2">
+              <button onClick={() => handleDownload(image.urls.full)} className="absolute bottom-2 right-2 flex items-center justify-center px-3 py-2 bg-[#8080806f] hover:bg-[#8f8f8fb0] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                {!download ? <Download size={20} /> : <Loader />}
+              </button>
+              <button onClick={() => toggleFavorite(image)} className="absolute bottom-2 right-16 flex items-center justify-center px-3 py-2 bg-[#8080806f] hover:bg-[#8f8f8fb0] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                <Heart size={20} fill={favorites.some((fav) => fav.id === image.id) ? "white" : "none"} />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
 
