@@ -1,9 +1,10 @@
 "use client";
-import { Download } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import { Download, Search } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 import Loader from "./Loader";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { motion } from "framer-motion";
 
 const Main = () => {
   const [input, setInput] = useState("");
@@ -11,51 +12,24 @@ const Main = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [download, setDownload] = useState(false);
+  const observer = useRef(null);
 
   const API_KEY = "BxzsLkkcx-jlK6zfPM_mA2baONy2k1NY9rTdvhkFghs";
 
-  const fetchRandomImages = async () => {
+  const fetchImages = async (newPage = 1, searchTerm = input) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/photos/random?client_id=${API_KEY}&count=12`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch random images");
-      }
+      const url = searchTerm
+        ? `https://api.unsplash.com/search/photos?page=${newPage}&query=${searchTerm}&client_id=${API_KEY}&per_page=12`
+        : `https://api.unsplash.com/photos/random?client_id=${API_KEY}&count=12`;
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch images");
+
       const data = await response.json();
-      setImages(data);
-    } catch (err) {
-      toast.error("Failed to fetch random images. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const result = searchTerm ? data.results : data;
 
-  const searchImages = async (newPage = 1) => {
-    setLoading(true);
-
-    try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?page=${newPage}&query=${input}&client_id=${API_KEY}&per_page=12`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch images");
-      }
-      const data = await response.json();
-      const result = data.results;
-
-      if (result.length === 0) {
-        toast.info(`No images found for "${input}"`);
-        return;
-      }
-
-      if (newPage > 1) {
-        setImages((prevImages) => [...prevImages, ...result]);
-      } else {
-        setImages(result);
-      }
-
+      setImages(newPage > 1 ? (prev) => [...prev, ...result] : result);
       setPage(newPage);
     } catch (err) {
       toast.error("Failed to fetch images. Please try again.");
@@ -69,31 +43,19 @@ const Main = () => {
       toast.warning("Please enter an image name to search");
       return;
     }
-    setPage(1);
-    searchImages(1);
-  };
-
-  const handleSeeMore = () => {
-    if (input.trim() === "") {
-      toast.warning("Please enter an image name to see more results");
-      return;
-    }
-    searchImages(page + 1);
+    fetchImages(1, input);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
   const handleDownload = async (url) => {
     setDownload(true);
     try {
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to download image");
-      }
+      if (!response.ok) throw new Error("Failed to download image");
+
       const blob = await response.blob();
       const urlObject = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -104,7 +66,7 @@ const Main = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(urlObject);
       toast.success("Image downloaded successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download the image");
     } finally {
       setDownload(false);
@@ -112,70 +74,61 @@ const Main = () => {
   };
 
   useEffect(() => {
-    fetchRandomImages(); // Fetch random images on initial load
+    fetchImages();
   }, []);
 
   return (
-    <div className="min-w-[90%] min-h-[100vh] flex flex-col items-center">
-      <h1 className="head text-[4vw] font-[600] text-sky-500">image-Hub</h1>
-      <p className="pera text-[1vw] text-gray-600 mb-7 text-center">
-        Find and download high-quality images with ease. Just enter a keyword
-        and explore!
+    <div className="min-w-[90%] min-h-screen flex px-10 flex-col items-center py-16 bg-gradient-to-r from-gray-100 to-gray-200">
+      <p className="text-gray-700 text-xl font-semibold my-6 text-center">
+        Discover and download high-quality images effortlessly!
       </p>
-      <div className="search flex flex-col items-center mb-6">
-        <div className="flex gap-3 mb-2 w-full">
-          <input
-            className="rounded py-2 px-4 w-full bg-[#ffffff] shadow-md"
-            type="text"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            value={input}
-            placeholder="Search all images"
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-sky-500 hover:bg-sky-600 py-2 px-4 rounded text-white shadow-md"
-          >
-            Search
-          </button>
-        </div>
-      </div>
 
-      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
+        <div className="w-full max-w-lg">
+          <div className="relative">
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              placeholder="Search images"
+              value={input}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <div className="absolute left-3 top-2.5">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <button
+              onClick={handleSearch}
+              className="absolute right-2 top-1.5 bg-sky-500 text-white px-3 py-1 rounded-md hover:bg-sky-600 transition-colors"
+            >
+              Search
+            </button>
+            <div></div>
+          </div>
+        </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-8">
         {images.map((image) => (
-          <div
+          <motion.div
             key={image.id}
-            className="relative mb-4 break-inside-avoid rounded overflow-hidden group rounded-[6px]"
+            className="relative overflow-hidden group rounded-lg shadow-lg"
+            whileHover={{ scale: 1.05 }}
           >
-            {/* Image */}
             <img
               src={image.urls.small}
               alt="random"
-              className="w-full h-auto object-cover rounded-[6px]"
+              className="w-full h-auto object-cover rounded-lg"
             />
-            {/* Download Button */}
             <button
               onClick={() => handleDownload(image.urls.full)}
-              className="absolute bottom-2 right-2 flex items-center justify-center px-3 py-2 bg-[#8080806f] hover:bg-[#8f8f8fb0] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute bottom-2 right-2 flex items-center justify-center px-3 py-2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded transition-opacity opacity-0 group-hover:opacity-100"
             >
               {!download ? <Download size={20} /> : <Loader />}
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {loading && <p className="mt-4 text-black">Loading...</p>}
-
-      {images.length > 0 && !loading && (
-        <button
-          onClick={handleSeeMore}
-          className="mt-3 mb-2 bg-sky-500 hover:bg-sky-600 py-2 px-4 rounded text-white shadow-md"
-        >
-          See More
-        </button>
-      )}
-
-      {/* Toast Notification Container */}
+      {loading && <Loader />}
       <ToastContainer />
     </div>
   );

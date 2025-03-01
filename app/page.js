@@ -2,10 +2,12 @@
 
 import React from 'react'
 import Main from './Components/Main'
+import Navbar from './Components/Navbar'
 
 const page = () => {
   return (
-    <div className='h-screen w-full flex justify-center p-[30px]'>
+    <div>
+      <Navbar />
       <Main/>
     </div>
   )
