@@ -5,6 +5,7 @@ import Loader from "./Loader";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Down from "./Down";
+
 const Main = () => {
   const [input, setInput] = useState("");
   const [images, setImages] = useState([]);
