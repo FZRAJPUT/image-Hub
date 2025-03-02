@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Loader from "./Loader";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import Down from "./Down";
 const Main = () => {
   const [input, setInput] = useState("");
   const [images, setImages] = useState([]);
@@ -147,7 +147,7 @@ const Main = () => {
             />
             <div className="absolute bottom-2 right-2 flex space-x-2">
               <button onClick={() => handleDownload(image.urls.full)} className="absolute bottom-2 right-2 flex items-center justify-center px-3 py-2 bg-[#8080806f] hover:bg-[#8f8f8fb0] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                {!download ? <Download size={20} /> : <Loader />}
+                {!download ? <Download size={20} /> : <Down />}
               </button>
               <button onClick={() => toggleFavorite(image)} className="absolute bottom-2 right-16 flex items-center justify-center px-3 py-2 bg-[#8080806f] hover:bg-[#8f8f8fb0] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity">
                 <Heart size={20} fill={favorites.some((fav) => fav.id === image.id) ? "white" : "none"} />
